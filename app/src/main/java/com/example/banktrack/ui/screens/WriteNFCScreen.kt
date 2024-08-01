@@ -32,12 +32,14 @@ class WriteNFCScreen : AppCompatActivity() {
     private lateinit var pendingIntent: PendingIntent
     private var pendingNfcOperation: ((String) -> Unit)? = null
     private var pendingWriteMessage: String? = null
-//    private lateinit var save : Button
-    private lateinit var backBtn : ImageView
-    private lateinit var successBtn : Button
-    private lateinit var info : TextView
-    private lateinit var desc : TextView
-    private lateinit var nfcImg : ImageView
+
+    //    private lateinit var save : Button
+    private lateinit var backBtn: ImageView
+    private lateinit var successBtn: Button
+    private lateinit var homeBtn: Button
+    private lateinit var info: TextView
+    private lateinit var desc: TextView
+    private lateinit var nfcImg: ImageView
 //    private lateinit var nfcNotFound : TextView
 //    private lateinit var nfcSearch: ImageView
 
@@ -56,7 +58,8 @@ class WriteNFCScreen : AppCompatActivity() {
         nfcImg = findViewById<ImageView>(R.id.nfc_img)
 //        nfcNotFound = findViewById<TextView>(R.id.nfc_not_found)
 //        nfcSearch = findViewById(R.id.nfc_search)
-        successBtn  = findViewById(R.id.button1)
+        successBtn = findViewById(R.id.button1)
+        homeBtn = findViewById(R.id.back_to_home)
 
         val manager: NfcManager = getSystemService(Context.NFC_SERVICE) as NfcManager
         nfcAdapter = (manager.defaultAdapter ?: run {
@@ -64,22 +67,30 @@ class WriteNFCScreen : AppCompatActivity() {
             Toast.makeText(this, "NFC is not supported on this device.", Toast.LENGTH_LONG).show()
             info.text = "Tag not found"
             desc.text = "Your device is not NFC compatible"
-            nfcImg.visibility = View.GONE
+//            nfcImg.visibility = View.GONE
 //            nfcNotFound.visibility = View.VISIBLE
 //            save.visibility = View.GONE
             null // Set nfcAdapter to null
         })!!
 
+        homeBtn.setOnClickListener {
+            startActivity(Intent(this, MainActivity::class.java))
+        }
+
         successBtn.setOnClickListener {
-            Toast.makeText(this,"Writing, please wait...",Toast.LENGTH_SHORT).show()
+            info.text = "Scanning"
+            desc.text = "BankTrack uses  AES-256 encryption and is trusted by millions of user rounds the globe "
+            nfcImg.setImageResource(R.drawable.new_nfc)
+            Toast.makeText(this, "Writing, please wait...", Toast.LENGTH_SHORT).show()
             val bankDetails = BankDetail(
-                accountNumber =  intent.getStringExtra("number")!!,
-                accountName =  intent.getStringExtra("name")!!,
-                bankName =  intent.getStringExtra("bank")!!
+                accountNumber = intent.getStringExtra("number")!!,
+                accountName = intent.getStringExtra("name")!!,
+                bankName = intent.getStringExtra("bank")!!
             )
             viewModel.insert(bankDetails)
 //            pendingWriteMessage = "${bankDetails.accountNumber};${bankDetails.accountName};${bankDetails.bankName}"
-            pendingWriteMessage = "${bankDetails.accountNumber};${bankDetails.accountName};${bankDetails.bankName}"
+            pendingWriteMessage =
+                "${bankDetails.accountNumber};${bankDetails.accountName};${bankDetails.bankName}"
             //
             // Set background tint to gray and disable the button
             successBtn.isEnabled = false
@@ -123,8 +134,9 @@ class WriteNFCScreen : AppCompatActivity() {
         super.onNewIntent(intent)
         intent.let {
             if (NfcAdapter.ACTION_TAG_DISCOVERED == it.action ||
-                NfcAdapter.ACTION_TECH_DISCOVERED== it.action ||
-                NfcAdapter.ACTION_TAG_DISCOVERED == it.action) {
+                NfcAdapter.ACTION_TECH_DISCOVERED == it.action ||
+                NfcAdapter.ACTION_TAG_DISCOVERED == it.action
+            ) {
                 val tag = it.getParcelableExtra<Tag>(NfcAdapter.EXTRA_TAG)
                 tag?.let {
                     if (pendingWriteMessage != null) {
@@ -135,6 +147,11 @@ class WriteNFCScreen : AppCompatActivity() {
 //                            info.text = "Upload successful"
 //                            desc.text = "Your information has been successfully uploaded to the NFC tag."
                             Toast.makeText(this, "Written to NFC tag", Toast.LENGTH_SHORT).show()
+                            nfcImg.setImageResource(R.drawable.new_nfc)
+                            info.text = "Upload Successful"
+                            desc.text = "Details successfully uploaded to NFC"
+                            successBtn.visibility = View.GONE
+                            homeBtn.visibility = View.VISIBLE
 //                            save.visibility = View.GONE
 //                            successBtn.visibility =View.VISIBLE
                         } else {
